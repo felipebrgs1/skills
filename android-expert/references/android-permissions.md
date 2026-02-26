@@ -1,8 +1,8 @@
 # Android Runtime Permissions
 
-Complete permission handling patterns for Amethyst using Accompanist Permissions library and Android best practices.
+Complete permission handling patterns for Android apps using Accompanist Permissions library and Android best practices.
 
-## Permission Categories in Amethyst
+## Permission Categories in Android Apps
 
 ### Network Permissions (Normal - Auto-granted)
 
@@ -204,9 +204,7 @@ fun RationaleDialog(
 
 ## Lifecycle-Aware Permission Requests
 
-### Amethyst Pattern: POST_NOTIFICATIONS
-
-**File:** `amethyst/src/main/java/com/vitorpamplona/amethyst/ui/screen/loggedIn/LoggedInPage.kt`
+### Common Pattern: POST_NOTIFICATIONS
 
 ```kotlin
 @OptIn(ExperimentalPermissionsApi::class)
@@ -648,9 +646,9 @@ companion object {
 
 ## File Locations
 
-- `amethyst/src/main/AndroidManifest.xml` - Permission declarations
-- `amethyst/src/main/java/com/vitorpamplona/amethyst/ui/screen/loggedIn/LoggedInPage.kt` - Notification permission pattern
-- `amethyst/build.gradle` - Accompanist dependency
+- `app/src/main/AndroidManifest.xml` - Permission declarations
+- `app/src/main/java/com/example/yourapp/ui/screen/LoggedInPage.kt` - Notification permission pattern
+- `app/build.gradle` - Accompanist dependency
 
 ## Resources
 

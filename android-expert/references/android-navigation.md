@@ -1,13 +1,13 @@
 # Android Navigation Patterns
 
-Complete navigation implementation patterns for Amethyst Android app using Navigation Compose with type safety.
+Complete navigation implementation patterns for Android apps using Navigation Compose with type safety.
 
 ## Type-Safe Routes (Navigation 2.8.0+)
 
 ### Route Definitions
 
 ```kotlin
-// Routes.kt - All 40+ routes in Amethyst
+// Routes.kt - All routes in app
 @Serializable
 sealed class Route {
     // Bottom nav routes
@@ -395,7 +395,7 @@ fun MainScreen() {
         Scaffold(
             topBar = {
                 TopAppBar(
-                    title = { Text("Amethyst") },
+                    title = { Text("App") },
                     navigationIcon = {
                         IconButton(
                             onClick = { scope.launch { drawerState.open() } }
@@ -608,8 +608,8 @@ fun testNavigationToProfile() {
 
 ## File Locations
 
-- `amethyst/src/main/java/com/vitorpamplona/amethyst/ui/navigation/routes/Routes.kt`
-- `amethyst/src/main/java/com/vitorpamplona/amethyst/ui/navigation/AppNavigation.kt`
-- `amethyst/src/main/java/com/vitorpamplona/amethyst/ui/navigation/Nav.kt`
-- `amethyst/src/main/java/com/vitorpamplona/amethyst/ui/navigation/bottombars/AppBottomBar.kt`
-- `amethyst/src/main/java/com/vitorpamplona/amethyst/ui/navigation/drawer/DrawerContent.kt`
+- `app/src/main/java/com/example/yourapp/ui/navigation/routes/Routes.kt`
+- `app/src/main/java/com/example/yourapp/ui/navigation/AppNavigation.kt`
+- `app/src/main/java/com/example/yourapp/ui/navigation/Nav.kt`
+- `app/src/main/java/com/example/yourapp/ui/navigation/bottombars/AppBottomBar.kt`
+- `app/src/main/java/com/example/yourapp/ui/navigation/drawer/DrawerContent.kt`

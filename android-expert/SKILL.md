@@ -1,6 +1,6 @@
 # android-expert
 
-Android platform expertise for Amethyst Multiplatform project. Covers Compose Navigation, Material3, permissions, lifecycle, and Android-specific patterns in KMP architecture.
+Android platform expertise for Kotlin Multiplatform projects. Covers Compose Navigation, Material3, permissions, lifecycle, and Android-specific patterns in KMP architecture.
 
 ## When to Use
 
@@ -20,7 +20,7 @@ Auto-invoke when working with:
 ```
 MainActivity (Single Entry Point)
     ├── enableEdgeToEdge()
-    ├── AmethystTheme { }
+    ├── AppTheme { }
     └── NavHost
         ├── Route.Home → HomeScreen
         ├── Route.Profile(id) → ProfileScreen
@@ -45,19 +45,19 @@ Intent Filters (11+)
 ### Module Structure
 
 ```
-amethyst/                    # Android app module
+app/                    # Android app module
 ├── src/
 │   ├── main/
-│   │   ├── java/com/vitorpamplona/amethyst/
+│   │   ├── java/com/example/yourapp/
 │   │   │   ├── ui/
 │   │   │   │   ├── MainActivity.kt          # Entry point
 │   │   │   │   ├── navigation/
 │   │   │   │   │   ├── AppNavigation.kt     # NavHost
 │   │   │   │   │   ├── routes/Routes.kt     # @Serializable routes
 │   │   │   │   │   └── bottombars/AppBottomBar.kt
-│   │   │   │   ├── screen/                  # 80+ screens
+│   │   │   │   ├── screen/                  # Screens
 │   │   │   │   └── theme/Theme.kt           # Material3 theme
-│   │   │   └── Amethyst.kt                  # Application class
+│   │   │   └── YourApp.kt                  # Application class
 │   │   └── AndroidManifest.xml              # Permissions, intent filters
 │   └── androidMain/                         # KMP Android source set
 │       └── kotlin/                          # Platform-specific code
@@ -381,7 +381,7 @@ private val LightColorPalette = lightColorScheme(
 )
 
 @Composable
-fun AmethystTheme(
+fun AppTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit
 ) {
@@ -738,11 +738,11 @@ fun SignerIntegration(accountViewModel: AccountViewModel) {
 **build.gradle (Amethyst pattern):**
 ```gradle
 android {
-    namespace = 'com.vitorpamplona.amethyst'
+    namespace = 'com.example.yourapp'
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.vitorpamplona.amethyst"
+        applicationId = "com.example.yourapp"
         minSdk = 26          // Android 8.0 (Oreo)
         targetSdk = 36       // Android 15
         versionCode = 430
@@ -857,9 +857,9 @@ dependencies {
 
 ### Android Module Layout
 
-**Amethyst Structure:**
+**App Structure:**
 ```
-amethyst/
+app/
 ├── src/
 │   ├── main/                    # Standard Android
 │   │   ├── java/com/.../        # Compose UI code
@@ -923,7 +923,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
 
         setContent {
-            AmethystTheme {
+            AppTheme {
                 val accountViewModel: AccountStateViewModel = viewModel()
                 AccountScreen(accountViewModel)
             }
@@ -1043,12 +1043,12 @@ fun testPermissionRequest() {
 ## File Locations
 
 **Key Android Files:**
-- `amethyst/src/main/java/com/vitorpamplona/amethyst/ui/MainActivity.kt`
-- `amethyst/src/main/java/com/vitorpamplona/amethyst/ui/navigation/routes/Routes.kt`
-- `amethyst/src/main/java/com/vitorpamplona/amethyst/ui/navigation/AppNavigation.kt`
-- `amethyst/src/main/java/com/vitorpamplona/amethyst/ui/theme/Theme.kt`
-- `amethyst/src/main/AndroidManifest.xml`
-- `amethyst/build.gradle`
+- `app/src/main/java/com/example/yourapp/ui/MainActivity.kt`
+- `app/src/main/java/com/example/yourapp/ui/navigation/routes/Routes.kt`
+- `app/src/main/java/com/example/yourapp/ui/navigation/AppNavigation.kt`
+- `app/src/main/java/com/example/yourapp/ui/theme/Theme.kt`
+- `app/src/main/AndroidManifest.xml`
+- `app/build.gradle`
 
 ## Additional Resources
 

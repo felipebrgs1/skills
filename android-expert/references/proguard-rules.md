@@ -1,4 +1,4 @@
-# Proguard Rules for Amethyst
+# Proguard Rules for Android Apps
 
 Proguard configuration for optimizing and obfuscating Android APK while preserving necessary code.
 
@@ -9,9 +9,9 @@ Proguard configuration for optimizing and obfuscating Android APK while preservi
 - **Obfuscates** code by renaming classes/methods to short names
 - **Optimizes** code by inlining methods and removing dead code
 
-## Amethyst Proguard Configuration
+## Android Proguard Configuration
 
-**File:** `amethyst/proguard-rules.pro`
+**File:** `app/proguard-rules.pro`
 
 ### Keep Kotlin Metadata
 
@@ -26,11 +26,11 @@ Proguard configuration for optimizing and obfuscating Android APK while preservi
 -dontnote kotlinx.serialization.AnnotationsKt
 -dontnote kotlinx.serialization.SerializationKt
 
--keep,includedescriptorclasses class com.vitorpamplona.**$$serializer { *; }
--keepclassmembers class com.vitorpamplona.** {
+-keep,includedescriptorclasses class com.example.yourapp.**$$serializer { *; }
+-keepclassmembers class com.example.yourapp.** {
     *** Companion;
 }
--keepclasseswithmembers class com.vitorpamplona.** {
+-keepclasseswithmembers class com.example.yourapp.** {
     kotlinx.serialization.KSerializer serializer(...);
 }
 ```
@@ -39,14 +39,14 @@ Proguard configuration for optimizing and obfuscating Android APK while preservi
 
 ```proguard
 # Nostr events are serialized/deserialized
--keep class com.vitorpamplona.quartz.events.** { *; }
--keep class com.vitorpamplona.quartz.encoders.** { *; }
+-keep class com.example.yourlib.events.** { *; }
+-keep class com.example.yourlib.encoders.** { *; }
 
 # Keep event builders
--keep class com.vitorpamplona.quartz.builders.** { *; }
+-keep class com.example.yourlib.builders.** { *; }
 
 # Keep tag classes
--keep class com.vitorpamplona.quartz.nip01Core.tags.** { *; }
+-keep class com.example.yourlib.nip01Core.tags.** { *; }
 ```
 
 ### Keep Data Classes
@@ -56,8 +56,8 @@ Proguard configuration for optimizing and obfuscating Android APK while preservi
 -keep @kotlinx.serialization.Serializable class * { *; }
 
 # Keep all data classes
--keep class com.vitorpamplona.amethyst.model.** { *; }
--keep class com.vitorpamplona.amethyst.service.model.** { *; }
+-keep class com.example.yourapp.model.** { *; }
+-keep class com.example.yourapp.service.model.** { *; }
 ```
 
 ### Keep Compose Classes
@@ -283,7 +283,7 @@ R8 generates `mapping.txt` in `app/build/outputs/mapping/release/`:
 
 ```
 # Original class name -> Obfuscated name
-com.vitorpamplona.amethyst.ui.MainActivity -> a.b.c:
+com.example.yourapp.ui.MainActivity -> a.b.c:
     void onCreate(Bundle) -> a
 ```
 
@@ -361,7 +361,7 @@ adb install app/build/outputs/apk/release/app-release.apk
 **Solution:**
 ```proguard
 # Keep all route classes
--keep @kotlinx.serialization.Serializable class com.vitorpamplona.amethyst.ui.navigation.routes.** { *; }
+-keep @kotlinx.serialization.Serializable class com.example.yourapp.ui.navigation.routes.** { *; }
 ```
 
 ### Issue: Native Library Crashes
@@ -382,10 +382,10 @@ adb install app/build/outputs/apk/release/app-release.apk
 Don't use broad wildcards:
 ```proguard
 # Bad - keeps everything
--keep class com.vitorpamplona.** { *; }
+-keep class com.example.yourapp.** { *; }
 
 # Good - keeps only specific packages
--keep class com.vitorpamplona.quartz.events.** { *; }
+-keep class com.example.yourlib.events.** { *; }
 ```
 
 ### 2. Test Thoroughly
@@ -457,9 +457,9 @@ android {
 
 ## File Locations
 
-- `amethyst/proguard-rules.pro` - Main Proguard rules
-- `amethyst/build/outputs/mapping/release/` - Proguard output files
-- `amethyst/build.gradle` - Proguard configuration
+- `app/proguard-rules.pro` - Main Proguard rules
+- `app/build/outputs/mapping/release/` - Proguard output files
+- `app/build.gradle` - Proguard configuration
 
 ## Resources
 

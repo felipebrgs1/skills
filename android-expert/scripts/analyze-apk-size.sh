@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# APK Size Analysis Script for Amethyst
+# APK Size Analysis Script for Android Apps
 #
 # Usage:
 #   ./analyze-apk-size.sh [apk-path]
@@ -17,18 +17,18 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Default APK path
-DEFAULT_APK="amethyst/build/outputs/apk/release/amethyst-release.apk"
+DEFAULT_APK="app/build/outputs/apk/release/app-release.apk"
 APK_PATH="${1:-$DEFAULT_APK}"
 
 # Check if APK exists
 if [ ! -f "$APK_PATH" ]; then
     echo -e "${RED}Error: APK not found at $APK_PATH${NC}"
-    echo "Build the APK first: ./gradlew :amethyst:assembleRelease"
+    echo "Build the APK first: ./gradlew :app:assembleRelease"
     exit 1
 fi
 
 echo -e "${BLUE}═══════════════════════════════════════════════════════${NC}"
-echo -e "${BLUE}  Amethyst APK Size Analysis${NC}"
+echo -e "${BLUE}  APK Size Analysis${NC}"
 echo -e "${BLUE}═══════════════════════════════════════════════════════${NC}"
 echo
 
