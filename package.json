@@ -4,7 +4,7 @@
   "description": "Felipe's Custom Skills",
   "main": "index.js",
   "bin": {
-    "skills": "./bin/cli.js"
+    "skills2": "./bin/cli.js"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"

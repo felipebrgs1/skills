@@ -4,31 +4,25 @@ Skills customizadas para o Antigravity.
 
 
 
-### Exemplos
 
-```bash
-npx skills add https://github.com/felipebrgs1/skills  # Baixa todas as skills
-npx skills add anthropics/skills --skill frontend-design
-npx skills add vercel-labs/skills --skill find-skills
-```
+
 
 ### Meus Skills
 
 ```bash
-npx skills add https://github.com/felipebrgs1/skills --skill react-doctor
-npx skills add https://github.com/felipebrgs1/skills --skill performance
-npx skills add https://github.com/felipebrgs1/skills --skill seo
-npx skills add https://github.com/felipebrgs1/skills --skill accessibility
-npx skills add https://github.com/felipebrgs1/skills --skill core-web-vitals
-npx skills add https://github.com/felipebrgs1/skills --skill web-quality-audit
-npx skills add https://github.com/felipebrgs1/skills --skill kotlin-core
-npx skills add https://github.com/felipebrgs1/skills --skill kotlin-ui
-npx skills add https://github.com/felipebrgs1/skills --skill kotlin-perf
-npx skills add https://github.com/felipebrgs1/skills --skill kotlin-multiplatform
-npx skills add https://github.com/felipebrgs1/skills --skill android-expert
-npx skills add https://github.com/felipebrgs1/skills --skill gradle-expert
-npx skills add https://github.com/felipebrgs1/skills --skill desktop-expert
-npx skills add https://github.com/felipebrgs1/skills --skill best-practices
+npx skills add https://github.com/felipebrgs1/skills/web/react-doctor --skill react-doctor
+npx skills add https://github.com/felipebrgs1/skills/web/performance --skill performance
+npx skills add https://github.com/felipebrgs1/skills/web/seo --skill seo
+npx skills add https://github.com/felipebrgs1/skills/web/accessibility --skill accessibility
+npx skills add https://github.com/felipebrgs1/skills/web/core-web-vitals --skill core-web-vitals
+npx skills add https://github.com/felipebrgs1/skills/quality-assurance/web-quality-audit --skill web-quality-audit
+npx skills add https://github.com/felipebrgs1/skills/mobile/kotlin-core --skill kotlin-core
+npx skills add https://github.com/felipebrgs1/skills/mobile/kotlin-ui --skill kotlin-ui
+npx skills add https://github.com/felipebrgs1/skills/mobile/kotlin-perf --skill kotlin-perf
+npx skills add https://github.com/felipebrgs1/skills/mobile/kotlin-multiplatform --skill kotlin-multiplatform
+npx skills add https://github.com/felipebrgs1/skills/mobile/android-expert --skill android-expert
+npx skills add https://github.com/felipebrgs1/skills/mobile/gradle-expert --skill gradle-expert
+npx skills add https://github.com/felipebrgs1/skills/other/best-practices --skill best-practices
 ```
 
 ### Update skills
