@@ -3,17 +3,13 @@
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
-const { execSync } = require('child_process');
+const { execSync, spawn } = require('child_process');
 
 const args = process.argv.slice(2);
 const command = args[0];
 const skillsDir = path.join(os.homedir(), '.gemini', 'antigravity', 'skills');
 const repoDir = path.join(__dirname, '..');
 
-/**
- * Recursively finds all directories containing a SKILL.md file.
- * Returns relative paths from repoDir.
- */
 function getLocalSkills(dir = repoDir) {
   let results = [];
   const list = fs.readdirSync(dir);
@@ -25,21 +21,17 @@ function getLocalSkills(dir = repoDir) {
     if (stat.isDirectory()) {
       if (['bin', '.git', 'node_modules'].includes(item)) continue;
 
-      // Check if this directory has a SKILL.md
       if (fs.existsSync(path.join(fullPath, 'SKILL.md'))) {
         results.push(path.relative(repoDir, fullPath));
       }
 
-      // Continue searching deeper
       results = results.concat(getLocalSkills(fullPath));
     }
   }
   return results;
 }
 
-function installSkill(skillPath) {
-  // Use the full relative path as the name to preserve structure if desired,
-  // or just the basename. Let's use the full relative path to allow categories.
+function installLocalSkill(skillPath) {
   const name = skillPath;
   const sourcePath = path.join(repoDir, skillPath);
   const targetPath = path.join(skillsDir, name);
@@ -58,23 +50,36 @@ function installSkill(skillPath) {
   console.log(`✅ Skill '${name}' installed!`);
 }
 
+function runSkillsCLI(additionalArgs = []) {
+  const child = spawn('npx', ['skills', ...additionalArgs], {
+    stdio: 'inherit',
+    shell: false
+  });
+  child.on('exit', (code) => process.exit(code || 0));
+}
+
 if (!command || command === 'help') {
   console.log('Usage:');
-  console.log('  npx skills sync                - Installs all local skills (recursive search)');
-  console.log('  npx skills add <path>          - Installs a specific local skill by path');
-  console.log('  npx skills add <url> [--skill <name>] - Installs from GitHub');
-  console.log('  npx skills remove <name>       - Removes an installed skill');
-  console.log('  npx skills list                - Lists local and installed skills');
+  console.log('  skills sync                - Instala todas as skills locais no Antigravity');
+  console.log('  skills list                - Lista skills locais e instaladas');
+  console.log('  skills add <path>          - Instala uma skill local específica');
+  console.log('  skills remove <name>       - Remove uma skill instalada');
+  console.log('');
+  console.log('  skills search <query>      - Busca skills no skills.sh (via npx skills)');
+  console.log('  skills install <owner/repo> - Instala skills do GitHub via skills.sh');
+  console.log('  skills install <url>       - Instala skills de URL GitHub via skills.sh');
+  console.log('');
+  console.log('Para comandos avançados do skills.sh, use: npx skills <comando>');
   process.exit(0);
 }
 
 if (command === 'list') {
-  console.log('\nAvailable in local repo:');
+  console.log('\n📁 Available in local repo:');
   const local = getLocalSkills();
   if (local.length === 0) console.log(' None.');
   local.forEach(s => console.log(` - ${s}`));
 
-  console.log('\nCurrently installed in Antigravity:');
+  console.log('\n📦 Currently installed in Antigravity:');
   if (fs.existsSync(skillsDir)) {
     const installed = [];
     function walkInstalled(dir, base = '') {
@@ -100,66 +105,73 @@ if (command === 'list') {
 }
 
 if (command === 'sync' || command === 'install') {
-  console.log('Installing all local skills...');
-  const skills = getLocalSkills();
-  skills.forEach(s => installSkill(s));
+  const targetArg = args[1];
+
+  if (targetArg) {
+    if (targetArg.startsWith('http') || targetArg.includes('/')) {
+      console.log('Installing from skills.sh...');
+      runSkillsCLI(['add', targetArg, '-a', 'antigravity', '-g', '-y']);
+    } else {
+      console.log('Installing local skill...');
+      const sourcePath = path.join(repoDir, targetArg);
+      if (!fs.existsSync(sourcePath)) {
+        console.error(`Error: Skill path '${targetArg}' not found.`);
+        process.exit(1);
+      }
+      if (!fs.existsSync(path.join(sourcePath, 'SKILL.md'))) {
+        console.error(`Error: Path '${targetArg}' does not contain SKILL.md.`);
+        process.exit(1);
+      }
+      installLocalSkill(targetArg);
+    }
+  } else {
+    console.log('Installing all local skills...');
+    const skills = getLocalSkills();
+    skills.forEach(s => installLocalSkill(s));
+  }
   console.log('\nDone! Restart the agent to see changes.');
   process.exit(0);
 }
 
-if (command === 'add') {
-  let targetSkill = args[1];
-  if (!targetSkill) {
-    console.error('Error: No skill path or URL provided.');
-    process.exit(1);
-  }
-
-  // Check for --skill flag
-  const skillFlagIndex = args.indexOf('--skill');
-  const specificSkill = skillFlagIndex !== -1 ? args[skillFlagIndex + 1] : null;
-
-  if (targetSkill.startsWith('http')) {
-    const tempDir = path.join(os.tmpdir(), `skill-dl-${Date.now()}`);
-    console.log(`Cloning from ${targetSkill}...`);
-    try {
-      execSync(`git clone --depth 1 ${targetSkill} ${tempDir}`, { stdio: 'inherit' });
-
-      const skillToInstall = specificSkill || path.basename(targetSkill).replace('.git', '');
-      const sourcePath = specificSkill ? path.join(tempDir, specificSkill) : tempDir;
-
-      if (!fs.existsSync(sourcePath)) {
-        throw new Error(`Skill '${specificSkill}' not found in the repository.`);
-      }
-
-      const finalTarget = path.join(skillsDir, skillToInstall);
-      if (!fs.existsSync(path.dirname(finalTarget))) {
-        fs.mkdirSync(path.dirname(finalTarget), { recursive: true });
-      }
-
-      fs.cpSync(sourcePath, finalTarget, { recursive: true });
-      console.log(`✅ Skill '${skillToInstall}' installed!`);
-      fs.rmSync(tempDir, { recursive: true, force: true });
-    } catch (e) {
-      console.error(`Error: ${e.message}`);
-      process.exit(1);
-    }
+if (command === 'search') {
+  const query = args.slice(1).join(' ');
+  if (!query) {
+    console.log('Searching skills.sh interactively...');
+    runSkillsCLI(['find']);
   } else {
-    // Local installation
-    const sourcePath = path.join(repoDir, targetSkill);
-    if (!fs.existsSync(sourcePath)) {
-      console.error(`Error: Skill path '${targetSkill}' not found in local repo.`);
-      process.exit(1);
-    }
-    if (!fs.existsSync(path.join(sourcePath, 'SKILL.md'))) {
-      console.error(`Error: Path '${targetSkill}' does not contain a SKILL.md file.`);
-      process.exit(1);
-    }
-    installSkill(targetSkill);
+    console.log(`Searching for: ${query}`);
+    runSkillsCLI(['find', query]);
   }
   process.exit(0);
 }
 
-if (command === 'remove') {
+if (command === 'add' || command === 'install') {
+  let target = args[1];
+  if (!target) {
+    console.error('Error: No skill path or repo provided.');
+    process.exit(1);
+  }
+
+  if (target.startsWith('http') || target.includes('/')) {
+    console.log(`Installing from skills.sh: ${target}`);
+    const skillFlag = args.includes('--skill') ? ['--skill', args[args.indexOf('--skill') + 1]] : [];
+    runSkillsCLI(['add', target, '-a', 'antigravity', '-g', '-y', ...skillFlag]);
+  } else {
+    const sourcePath = path.join(repoDir, target);
+    if (!fs.existsSync(sourcePath)) {
+      console.error(`Error: Local skill '${target}' not found.`);
+      process.exit(1);
+    }
+    if (!fs.existsSync(path.join(sourcePath, 'SKILL.md'))) {
+      console.error(`Error: Path '${target}' does not contain SKILL.md.`);
+      process.exit(1);
+    }
+    installLocalSkill(target);
+  }
+  process.exit(0);
+}
+
+if (command === 'remove' || command === 'rm') {
   const skillName = args[1];
   if (!skillName) {
     console.error('Error: No skill name provided.');
@@ -167,11 +179,14 @@ if (command === 'remove') {
   }
   const targetPath = path.join(skillsDir, skillName);
   if (fs.existsSync(targetPath)) {
-    fs.rmSync(targetPath, { recursive: true, force: true });
+    fs.rmSync(targetPath, { recursive: true, true: true });
     console.log(`🗑️ Skill '${skillName}' removed.`);
   } else {
-    console.log(`Error: Skill '${skillName}' is not installed.`);
+    runSkillsCLI(['remove', skillName, '-a', 'antigravity', '-g', '-y']);
   }
   process.exit(0);
 }
 
+console.log(`Unknown command: ${command}`);
+console.log('Run "skills help" for usage information.');
+process.exit(1);
