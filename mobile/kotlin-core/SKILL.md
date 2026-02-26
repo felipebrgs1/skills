@@ -1,9 +1,9 @@
 ---
-name: kotlin-expert
+name: kotlin-core
 description: Advanced Kotlin patterns. Flow state management, sealed hierarchies, immutability (@Immutable), DSL builders, inline/reified functions. Use when working with: (1) StateFlow/SharedFlow, (2) Sealed classes or interfaces, (3) @Immutable for Compose, (4) DSL builders, (5) inline/reified, (6) Kotlin performance.
 ---
 
-# Kotlin Expert
+# Kotlin Core
 
 Advanced Kotlin patterns. Covers Flow, sealed hierarchies, immutability, DSL builders, and inline functions.
 
