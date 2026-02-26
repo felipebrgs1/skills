@@ -4,77 +4,115 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 
-const [, , command, skillName] = process.argv;
+const { execSync } = require('child_process');
 
+const args = process.argv.slice(2);
+const command = args[0];
 const skillsDir = path.join(os.homedir(), '.gemini', 'antigravity', 'skills');
-const sourceDir = path.join(__dirname, '..');
+const repoDir = path.join(__dirname, '..');
 
-if (!command) {
-  console.log('Uso: npx felipe-skills [add|remove|list] <nome-da-skill>');
-  process.exit(1);
+function getLocalSkills() {
+  return fs.readdirSync(repoDir).filter(item => {
+    const itemPath = path.join(repoDir, item);
+    return fs.statSync(itemPath).isDirectory() && !['bin', '.git', 'node_modules'].includes(item);
+  });
+}
+
+function installSkill(name, sourcePath) {
+  const targetPath = path.join(skillsDir, name);
+  if (fs.existsSync(targetPath)) {
+    console.log(`Skipping: Skill '${name}' already exists.`);
+    return;
+  }
+  if (!fs.existsSync(skillsDir)) {
+    fs.mkdirSync(skillsDir, { recursive: true });
+  }
+  fs.cpSync(sourcePath, targetPath, { recursive: true });
+  console.log(`✅ Skill '${name}' installed!`);
+}
+
+if (!command || command === 'help') {
+  console.log('Usage:');
+  console.log('  npx skills sync                - Installs all local skills from this repo');
+  console.log('  npx skills add <folder>        - Installs a specific local skill');
+  console.log('  npx skills add <url> [--skill <name>] - Installs from GitHub');
+  console.log('  npx skills remove <name>       - Removes an installed skill');
+  console.log('  npx skills list                - Lists local and installed skills');
+  process.exit(0);
 }
 
 if (command === 'list') {
-  console.log('Skills disponíveis no seu repositório:');
-  const items = fs.readdirSync(sourceDir);
-  items.forEach(item => {
-    const itemPath = path.join(sourceDir, item);
-    if (fs.statSync(itemPath).isDirectory() && !['bin', '.git', 'node_modules'].includes(item)) {
-      console.log(` - ${item}`);
-    }
-  });
+  console.log('\nAvailable in local repo:');
+  getLocalSkills().forEach(s => console.log(` - ${s}`));
 
-  console.log('\nSkills atualmente instaladas:');
+  console.log('\nCurrently installed in Antigravity:');
   if (fs.existsSync(skillsDir)) {
-    const installed = fs.readdirSync(skillsDir);
-    installed.forEach(item => {
-      console.log(` - ${item}`);
-    });
+    fs.readdirSync(skillsDir).forEach(s => console.log(` - ${s}`));
   } else {
-    console.log(' Nenhuma.');
+    console.log(' None.');
   }
   process.exit(0);
 }
 
-if (!skillName) {
-  console.error('\nErro: nome da skill não especificado.');
-  console.log('Uso correcto: npx felipe-skills add <nome-da-skill>');
-  process.exit(1);
+if (command === 'sync' || command === 'install') {
+  console.log('Installing all local skills...');
+  const skills = getLocalSkills();
+  skills.forEach(s => installSkill(s, path.join(repoDir, s)));
+  console.log('\nDone! Restart the agent to see changes.');
+  process.exit(0);
 }
-
-const targetPath = path.join(skillsDir, skillName);
-const sourcePath = path.join(sourceDir, skillName);
 
 if (command === 'add') {
-  if (!fs.existsSync(sourcePath)) {
-    console.error(`\nErro: Skill '${skillName}' não encontrada no seu repositório.`);
+  let targetSkill = args[1];
+  if (!targetSkill) {
+    console.error('Error: No skill or URL provided.');
     process.exit(1);
   }
 
-  if (!fs.existsSync(skillsDir)) {
-    fs.mkdirSync(skillsDir, { recursive: true });
+  // Check for --skill flag
+  const skillFlagIndex = args.indexOf('--skill');
+  const specificSkill = skillFlagIndex !== -1 ? args[skillFlagIndex + 1] : null;
+
+  if (targetSkill.startsWith('http')) {
+    const tempDir = path.join(os.tmpdir(), `skill-dl-${Date.now()}`);
+    console.log(`Cloning from ${targetSkill}...`);
+    try {
+      execSync(`git clone --depth 1 ${targetSkill} ${tempDir}`, { stdio: 'inherit' });
+
+      const skillToInstall = specificSkill || path.basename(targetSkill).replace('.git', '');
+      const sourcePath = specificSkill ? path.join(tempDir, specificSkill) : tempDir;
+
+      if (!fs.existsSync(sourcePath)) {
+        throw new Error(`Skill '${specificSkill}' not found in the repository.`);
+      }
+
+      installSkill(skillToInstall, sourcePath);
+      fs.rmSync(tempDir, { recursive: true, force: true });
+    } catch (e) {
+      console.error(`Error: ${e.message}`);
+      process.exit(1);
+    }
+  } else {
+    // Local installation
+    const sourcePath = path.join(repoDir, targetSkill);
+    if (!fs.existsSync(sourcePath)) {
+      console.error(`Error: Skill '${targetSkill}' not found in local repo.`);
+      process.exit(1);
+    }
+    installSkill(targetSkill, sourcePath);
   }
-
-  if (fs.existsSync(targetPath)) {
-    console.error(`\nAviso: A skill '${skillName}' já está instalada.`);
-    process.exit(1);
-  }
-
-  // Copia os arquivos da skill
-  fs.cpSync(sourcePath, targetPath, { recursive: true });
-  console.log(`\n✅ Skill '${skillName}' instalada com sucesso no diretório ~/.gemini/antigravity/skills/!`);
-  console.log(`O agente Antigravity/OpenCode agora tem acesso a ela.`);
-
-} else if (command === 'remove') {
-  if (!fs.existsSync(targetPath)) {
-    console.error(`\nErro: A skill '${skillName}' não está instalada.`);
-    process.exit(1);
-  }
-
-  fs.rmSync(targetPath, { recursive: true, force: true });
-  console.log(`\n🗑️ Skill '${skillName}' removida com sucesso!`);
-  console.log(`O agente não a utilizará mais.`);
-} else {
-  console.log('\nComando desconhecido. Comandos válidos: add, remove, list.');
-  process.exit(1);
+  process.exit(0);
 }
+
+if (command === 'remove') {
+  const skillName = args[1];
+  const targetPath = path.join(skillsDir, skillName);
+  if (fs.existsSync(targetPath)) {
+    fs.rmSync(targetPath, { recursive: true, force: true });
+    console.log(`🗑️ Skill '${skillName}' removed.`);
+  } else {
+    console.log(`Error: Skill '${skillName}' is not installed.`);
+  }
+  process.exit(0);
+}
+
