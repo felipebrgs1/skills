@@ -3,7 +3,6 @@
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
-
 const { execSync } = require('child_process');
 
 const args = process.argv.slice(2);
@@ -11,30 +10,58 @@ const command = args[0];
 const skillsDir = path.join(os.homedir(), '.gemini', 'antigravity', 'skills');
 const repoDir = path.join(__dirname, '..');
 
-function getLocalSkills() {
-  return fs.readdirSync(repoDir).filter(item => {
-    const itemPath = path.join(repoDir, item);
-    return fs.statSync(itemPath).isDirectory() && !['bin', '.git', 'node_modules'].includes(item);
-  });
+/**
+ * Recursively finds all directories containing a SKILL.md file.
+ * Returns relative paths from repoDir.
+ */
+function getLocalSkills(dir = repoDir) {
+  let results = [];
+  const list = fs.readdirSync(dir);
+
+  for (const item of list) {
+    const fullPath = path.join(dir, item);
+    const stat = fs.statSync(fullPath);
+
+    if (stat.isDirectory()) {
+      if (['bin', '.git', 'node_modules'].includes(item)) continue;
+
+      // Check if this directory has a SKILL.md
+      if (fs.existsSync(path.join(fullPath, 'SKILL.md'))) {
+        results.push(path.relative(repoDir, fullPath));
+      }
+
+      // Continue searching deeper
+      results = results.concat(getLocalSkills(fullPath));
+    }
+  }
+  return results;
 }
 
-function installSkill(name, sourcePath) {
+function installSkill(skillPath) {
+  // Use the full relative path as the name to preserve structure if desired,
+  // or just the basename. Let's use the full relative path to allow categories.
+  const name = skillPath;
+  const sourcePath = path.join(repoDir, skillPath);
   const targetPath = path.join(skillsDir, name);
+
   if (fs.existsSync(targetPath)) {
     console.log(`Skipping: Skill '${name}' already exists.`);
     return;
   }
-  if (!fs.existsSync(skillsDir)) {
-    fs.mkdirSync(skillsDir, { recursive: true });
+
+  const targetParent = path.dirname(targetPath);
+  if (!fs.existsSync(targetParent)) {
+    fs.mkdirSync(targetParent, { recursive: true });
   }
+
   fs.cpSync(sourcePath, targetPath, { recursive: true });
   console.log(`✅ Skill '${name}' installed!`);
 }
 
 if (!command || command === 'help') {
   console.log('Usage:');
-  console.log('  npx skills sync                - Installs all local skills from this repo');
-  console.log('  npx skills add <folder>        - Installs a specific local skill');
+  console.log('  npx skills sync                - Installs all local skills (recursive search)');
+  console.log('  npx skills add <path>          - Installs a specific local skill by path');
   console.log('  npx skills add <url> [--skill <name>] - Installs from GitHub');
   console.log('  npx skills remove <name>       - Removes an installed skill');
   console.log('  npx skills list                - Lists local and installed skills');
@@ -43,11 +70,29 @@ if (!command || command === 'help') {
 
 if (command === 'list') {
   console.log('\nAvailable in local repo:');
-  getLocalSkills().forEach(s => console.log(` - ${s}`));
+  const local = getLocalSkills();
+  if (local.length === 0) console.log(' None.');
+  local.forEach(s => console.log(` - ${s}`));
 
   console.log('\nCurrently installed in Antigravity:');
   if (fs.existsSync(skillsDir)) {
-    fs.readdirSync(skillsDir).forEach(s => console.log(` - ${s}`));
+    const installed = [];
+    function walkInstalled(dir, base = '') {
+      const files = fs.readdirSync(dir);
+      for (const f of files) {
+        const full = path.join(dir, f);
+        const rel = path.join(base, f);
+        if (fs.statSync(full).isDirectory()) {
+          if (fs.existsSync(path.join(full, 'SKILL.md'))) {
+            installed.push(rel);
+          }
+          walkInstalled(full, rel);
+        }
+      }
+    }
+    walkInstalled(skillsDir);
+    if (installed.length === 0) console.log(' None.');
+    installed.forEach(s => console.log(` - ${s}`));
   } else {
     console.log(' None.');
   }
@@ -57,7 +102,7 @@ if (command === 'list') {
 if (command === 'sync' || command === 'install') {
   console.log('Installing all local skills...');
   const skills = getLocalSkills();
-  skills.forEach(s => installSkill(s, path.join(repoDir, s)));
+  skills.forEach(s => installSkill(s));
   console.log('\nDone! Restart the agent to see changes.');
   process.exit(0);
 }
@@ -65,7 +110,7 @@ if (command === 'sync' || command === 'install') {
 if (command === 'add') {
   let targetSkill = args[1];
   if (!targetSkill) {
-    console.error('Error: No skill or URL provided.');
+    console.error('Error: No skill path or URL provided.');
     process.exit(1);
   }
 
@@ -86,7 +131,13 @@ if (command === 'add') {
         throw new Error(`Skill '${specificSkill}' not found in the repository.`);
       }
 
-      installSkill(skillToInstall, sourcePath);
+      const finalTarget = path.join(skillsDir, skillToInstall);
+      if (!fs.existsSync(path.dirname(finalTarget))) {
+        fs.mkdirSync(path.dirname(finalTarget), { recursive: true });
+      }
+
+      fs.cpSync(sourcePath, finalTarget, { recursive: true });
+      console.log(`✅ Skill '${skillToInstall}' installed!`);
       fs.rmSync(tempDir, { recursive: true, force: true });
     } catch (e) {
       console.error(`Error: ${e.message}`);
@@ -96,16 +147,24 @@ if (command === 'add') {
     // Local installation
     const sourcePath = path.join(repoDir, targetSkill);
     if (!fs.existsSync(sourcePath)) {
-      console.error(`Error: Skill '${targetSkill}' not found in local repo.`);
+      console.error(`Error: Skill path '${targetSkill}' not found in local repo.`);
       process.exit(1);
     }
-    installSkill(targetSkill, sourcePath);
+    if (!fs.existsSync(path.join(sourcePath, 'SKILL.md'))) {
+      console.error(`Error: Path '${targetSkill}' does not contain a SKILL.md file.`);
+      process.exit(1);
+    }
+    installSkill(targetSkill);
   }
   process.exit(0);
 }
 
 if (command === 'remove') {
   const skillName = args[1];
+  if (!skillName) {
+    console.error('Error: No skill name provided.');
+    process.exit(1);
+  }
   const targetPath = path.join(skillsDir, skillName);
   if (fs.existsSync(targetPath)) {
     fs.rmSync(targetPath, { recursive: true, force: true });
